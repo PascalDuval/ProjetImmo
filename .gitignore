@@ -1,0 +1,19 @@
+# Environnement virtuel Poetry
+.venv/
+
+# Fichiers Python compilés
+__pycache__/
+*.pyc
+
+# Fichiers Jupyter
+.ipynb_checkpoints/
+
+# Données lourdes ou sensibles
+
+
+# Vieux fichiers
+old/
+
+# Dossiers temporaires
+.cache/
+logs/
