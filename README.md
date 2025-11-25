@@ -59,6 +59,8 @@ Predire la consommation energetique `SiteEnergyUse(kBtu)` des batiments du bench
 - `GET /model_info` : nom/version du modele et liste des features attendues.
 - Construire un bento reproductible : `poetry run bentoml build` (utilise `bentofile.yaml`).
 
+## docker
+A suivre...
 
 ## Tests rapides
 - Verifier la prediction hors API : `poetry run python scripts_bento/test_save_model.py`.
