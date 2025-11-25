@@ -56,8 +56,15 @@ Predire la consommation energetique `SiteEnergyUse(kBtu)` des batiments du bench
     ```
     Retour : `{ "prediction": <float> }` apres validation Pydantic/Pandera et mapping des colonnes (`Use_Retail` -> `Use_Retail Store`, etc.).
   - `GET /ping` : verifie que le service repond.
-  - `GET /model_info` : nom/version du modele et liste des features attendues.
+- `GET /model_info` : nom/version du modele et liste des features attendues.
 - Construire un bento reproductible : `poetry run bentoml build` (utilise `bentofile.yaml`).
+
+## Image Docker pre-construite
+Une image Docker exportee est fournie (`rf_energy_image.tar`) pour tester l API sans reconstruire le bento.
+- Prerequis : Docker installe localement.
+- Charger l image : `docker load -i rf_energy_image.tar` puis reperez le repository:tag retourne (ex. `rf_energy:latest`).
+- Lancer le conteneur : `docker run --rm -p 3000:3000 <image_tag_trouve>` (remplacez par le tag issu du `docker load`). L API est exposee sur `http://127.0.0.1:3000`.
+- Tester : `poetry run python scripts_bento/test_api.py` (utilise le port 3000) ou `curl -X POST http://127.0.0.1:3000/predict -H "Content-Type: application/json" -d @- <<'EOF' ... EOF` avec le payload exemple ci-dessous.
 
 ## Tests rapides
 - Verifier la prediction hors API : `poetry run python scripts_bento/test_save_model.py`.

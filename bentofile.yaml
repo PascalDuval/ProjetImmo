@@ -1,4 +1,6 @@
 service: "scripts_bento.service:EnergyService"
+#service: "service:svc"
+
 description: "Energy prediction service using BentoML 1.4.29"
 labels:
   owner: karap
