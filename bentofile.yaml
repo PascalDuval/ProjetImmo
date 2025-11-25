@@ -1,0 +1,19 @@
+service: "scripts_bento.service:EnergyService"
+description: "Energy prediction service using BentoML 1.4.29"
+labels:
+  owner: karap
+  stage: dev
+
+include:
+  - "scripts_bento/*.py"
+  - "data/"
+  - "bentofile.yaml"
+
+python:
+  packages:
+    - scikit-learn
+    - pandas
+    - numpy
+    - pydantic
+    - pandera
+    - bentoml==1.4.29
