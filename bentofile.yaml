@@ -9,11 +9,23 @@ include:
   - "data/"
   - "bentofile.yaml"
 
+exclude:
+  - "**/__pycache__/**"
+  - "**/*.ipynb"
+  - "notebooks/"
+  - ".git/"
+  - ".venv/"
+  - "*.log"
+  - "poetry.lock"  # pas nécessaire à l'image finale  
+
 python:
   packages:
-    - scikit-learn
-    - pandas
-    - numpy
-    - pydantic
-    - pandera
+    - numpy==2.3.4
+    - pandas==2.3.3
+    - scikit-learn==1.7.2
+    - torch==2.9.0
+    - torchvision==0.24.0
+    - torchaudio==2.9.0
+    - xgboost==3.1.1
     - bentoml==1.4.29
+    - pandera==0.26.1
