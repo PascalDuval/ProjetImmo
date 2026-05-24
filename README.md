@@ -72,7 +72,6 @@ old-projet/
 ├─ scripts_bento/
 │  ├─ save_model.py
 │  ├─ service.py
-│  ├─ service-back.py
 │  └─ test_api.py
 ├─ analyse_exploratoire.ipynb
 ├─ feature andMore.ipynb
@@ -132,10 +131,6 @@ poetry run python scripts_bento/test_api.py
 ```
 
 Important: ce test fonctionne seulement si le service BentoML tourne deja.
-
-### scripts_bento/service-back.py
-
-Version legacy/de reference du service. A conserver pour comparaison, mais le service principal a utiliser est scripts_bento/service.py.
 
 ## 7) Procedure complete recommandee
 
