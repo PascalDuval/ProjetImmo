@@ -1,23 +1,21 @@
 # Conso Batiment (Seattle 2016)
 
-README de prise en main tres explicite pour executer ce projet avec Poetry, du clonage au test de l API BentoML.
+Guide tres explicite pour tester le repo de bout en bout avec Poetry:
+1) execution des notebooks dans l ordre,
+2) entrainement/sauvegarde du modele,
+3) lancement API BentoML,
+4) test HTTP.
 
-## 1) Ce que fait ce projet
+## 1) Objectif du projet
 
-Objectif ML: predire la consommation energetique SiteEnergyUse(kBtu) des batiments de Seattle (jeu public 2016), puis exposer la prediction via une API BentoML.
-
-Pipeline global:
-1. Preparer/transformer les donnees (notebooks).
-2. Entrainer un RandomForest avec recherche d hyperparametres.
-3. Sauvegarder le modele dans BentoML.
-4. Demarrer une API locale et tester une prediction.
+Predire la consommation energetique SiteEnergyUse(kBtu) des batiments de Seattle (benchmark public 2016), avec un pipeline ML complet et une exposition via API.
 
 ## 2) Prerequis
 
-- Windows PowerShell, macOS Terminal ou Linux shell.
-- Python 3.11 installe.
-- Git installe.
-- Poetry installe.
+- Python 3.11
+- Git
+- Poetry
+- Jupyter (installe via Poetry)
 
 Verification rapide:
 
@@ -27,73 +25,126 @@ git --version
 poetry --version
 ```
 
-## 3) Cloner le projet et se placer dans old-projet
-
-Si vous n avez pas encore clone le depot:
+## 3) Clonage et installation
 
 ```bash
 git clone https://github.com/PascalDuval/ForecastingEC4Seattle.git
 cd ForecastingEC4Seattle/old-projet
-```
-
-Si le depot est deja clone, placez-vous simplement dans le dossier old-projet.
-
-## 4) Installer l environnement avec Poetry
-
-Depuis le dossier old-projet:
-
-```bash
 poetry env use 3.11
 poetry install
 ```
 
-Ensuite, deux facons de lancer les commandes:
+Execution des commandes:
+- soit avec poetry shell
+- soit (recommande) avec poetry run
 
-- Soit ouvrir un shell Poetry:
-
-```bash
-poetry shell
-```
-
-- Soit prefixer chaque commande avec poetry run (methode la plus robuste):
-
-```bash
-poetry run python --version
-```
-
-## 5) Arborescence utile (version simplifiee)
+## 4) Arborescence claire (renommee)
 
 ```text
 old-projet/
 ├─ data/
 │  ├─ 2016_Building_Energy_Benchmarking.csv
 │  ├─ feature_engineered_2016_energySpec.csv
-│  └─ ... autres jeux intermediaires et exports
+│  └─ ... jeux intermediaires + exports
 ├─ scripts_bento/
 │  ├─ save_model.py
 │  ├─ service.py
 │  └─ test_api.py
-├─ analyse_exploratoire.ipynb
-├─ feature andMore.ipynb
-├─ modeles.ipynb
+├─ ml01_exploration_donnees.ipynb
+├─ ml02_feature_engineering.ipynb
+├─ ml03_modelisation_evaluation.ipynb
 ├─ bentofile.yaml
 ├─ pyproject.toml
 └─ README.md
 ```
 
-## 6) Ce que fait chaque script
+## 5) Mode de test repo: enchainement des notebooks
+
+Objectif: rejouer le workflow data/ML dans un ordre deterministic.
+
+Ordre obligatoire:
+1. ml01_exploration_donnees.ipynb
+2. ml02_feature_engineering.ipynb
+3. ml03_modelisation_evaluation.ipynb
+
+### Option A: execution manuelle (Jupyter)
+
+```bash
+poetry run jupyter notebook
+```
+
+Puis ouvrir chaque notebook dans l ordre 01 -> 02 -> 03 et faire Run All.
+
+### Option B: execution automatisee (recommandee pour test)
+
+Depuis old-projet:
+
+```bash
+poetry run jupyter nbconvert --to notebook --execute --inplace ml01_exploration_donnees.ipynb
+poetry run jupyter nbconvert --to notebook --execute --inplace ml02_feature_engineering.ipynb
+poetry run jupyter nbconvert --to notebook --execute --inplace ml03_modelisation_evaluation.ipynb
+```
+
+Ce mode est utile pour valider rapidement qu un clone propre peut reproduire le pipeline sans intervention manuelle.
+
+## 6) Ce que fait chaque notebook (detail explicite)
+
+### ml01_exploration_donnees.ipynb
+
+Ce notebook fait l EDA:
+1. charge le jeu brut Seattle 2016,
+2. inspecte qualite des donnees (missing/NaN/null),
+3. etudie distributions de variables,
+4. analyse correlation/corr et heatmap,
+5. repere des outliers (boxplot, distribution),
+6. prepare les premieres decisions de nettoyage.
+
+Sortie principale: comprehension du dataset et regles de preparation a appliquer ensuite.
+
+### ml02_feature_engineering.ipynb
+
+Ce notebook transforme les donnees:
+1. nettoyage complementaire (dropna et filtres),
+2. creation de variables derivees (ex: log_surface),
+3. encodage categoriel (get_dummies),
+4. traitement outliers (methodes de type IQR),
+5. normalisation/encodage selon les besoins,
+6. export des jeux prets pour modelisation.
+
+Sortie principale: fichiers feature_engineered utilises par l entrainement.
+
+### ml03_modelisation_evaluation.ipynb
+
+Ce notebook compare plusieurs modeles et mesure leurs performances.
+
+Algorithmes mentionnes/utilises dans le notebook:
+- LinearRegression
+- Ridge
+- ElasticNet
+- RandomForest
+- GradientBoosting
+- XGBoost
+- LightGBM
+
+Metriques d evaluation:
+- R2
+- MAE
+- RMSE
+
+Sortie principale: choix du modele final et des hyperparametres pertinents.
+
+## 7) Ce que font les scripts Python
 
 ### scripts_bento/save_model.py
 
-Ce script:
 1. Charge data/feature_engineered_2016_energySpec.csv.
-2. Garde les colonnes numeriques et supprime les lignes incompletes.
-3. Separe la cible SiteEnergyUse(kBtu) du reste des variables.
-4. Fait un split train/test (80/20).
-5. Lance une RandomizedSearchCV sur RandomForestRegressor.
-6. Evalue le modele (R2, MAE, RMSE) sur train et test.
-7. Sauvegarde le modele dans BentoML sous le tag random_forest_energy.
-8. Sauvegarde aussi un fichier local random_forest_optimized_model.joblib.
+2. Garde les variables numeriques et supprime lignes incompletes.
+3. Separe target SiteEnergyUse(kBtu) et variables explicatives.
+4. Fait train/test split.
+5. Lance RandomizedSearchCV sur RandomForestRegressor.
+6. Evalue train/test (R2, MAE, RMSE).
+7. Sauvegarde dans BentoML sous random_forest_energy.
+8. Exporte aussi random_forest_optimized_model.joblib.
 
 Commande:
 
@@ -103,16 +154,17 @@ poetry run python scripts_bento/save_model.py
 
 ### scripts_bento/service.py
 
-Ce script definit le service BentoML:
-1. Charge le modele random_forest_energy:latest depuis le store BentoML.
-2. Defini le schema d entree (Pydantic + Pandera).
-3. Expose les endpoints:
-   - GET /ping
-   - POST /predict
-4. Aligne les colonnes d entree avec les features du modele.
-5. Retourne prediction_kBtu.
+Expose une API BentoML:
+- GET /ping
+- POST /predict
 
-Commande de lancement:
+Le service:
+1. charge le modele BentoML,
+2. valide l entree (Pydantic + Pandera),
+3. reindexe les colonnes selon les features du modele,
+4. retourne prediction_kBtu.
+
+Commande:
 
 ```bash
 poetry run bentoml serve scripts_bento.service:EnergyService --reload
@@ -120,9 +172,7 @@ poetry run bentoml serve scripts_bento.service:EnergyService --reload
 
 ### scripts_bento/test_api.py
 
-Ce script envoie une requete HTTP de test vers http://127.0.0.1:3000/predict et affiche:
-- le status code,
-- la reponse JSON.
+Envoie une requete HTTP de test sur localhost:3000/predict et affiche status + reponse JSON.
 
 Commande:
 
@@ -130,39 +180,28 @@ Commande:
 poetry run python scripts_bento/test_api.py
 ```
 
-Important: ce test fonctionne seulement si le service BentoML tourne deja.
+## 8) Procedure complete de validation (checklist)
 
-## 7) Procedure complete recommandee
-
-Depuis old-projet:
-
-1. Installer les dependances:
-
-```bash
-poetry install
-```
-
-2. Entrainer et sauvegarder le modele:
+1. Rejouer notebooks 01 -> 02 -> 03.
+2. Entrainer/sauvegarder le modele:
 
 ```bash
 poetry run python scripts_bento/save_model.py
 ```
 
-3. Demarrer l API (laisser ce terminal ouvert):
+3. Demarrer API:
 
 ```bash
 poetry run bentoml serve scripts_bento.service:EnergyService --reload
 ```
 
-4. Dans un second terminal, tester l API:
+4. Dans un second terminal, tester API:
 
 ```bash
 poetry run python scripts_bento/test_api.py
 ```
 
-## 8) Exemple de payload attendu par /predict
-
-Le endpoint /predict attend un JSON plat (pas de cle data imbriquee), par exemple:
+## 9) Payload attendu pour /predict
 
 ```json
 {
@@ -176,26 +215,31 @@ Le endpoint /predict attend un JSON plat (pas de cle data imbriquee), par exempl
 }
 ```
 
-## 9) Construire un Bento (optionnel)
+## 10) Focus explicite sur les algorithmes ML
 
-Une fois le modele sauvegarde:
+Pourquoi plusieurs algorithmes:
+- etablir une baseline lineaire (LinearRegression),
+- tester regularisation (Ridge, ElasticNet),
+- tester modeles non lineaires ensemblistes (RandomForest, GradientBoosting),
+- comparer des boosters performants sur tabulaire (XGBoost, LightGBM).
 
-```bash
-poetry run bentoml build
-```
+Lecture pratique des metriques:
+- R2 plus eleve -> meilleure variance expliquee,
+- MAE plus faible -> erreur absolue moyenne plus faible,
+- RMSE plus faible -> penalise plus fortement les grosses erreurs.
 
-Le fichier bentofile.yaml controle le service cible, les modeles et les fichiers inclus.
+Decision recommandee:
+- choisir le meilleur compromis RMSE/MAE/R2 sur validation,
+- verifier l ecart train vs test pour eviter le surapprentissage,
+- conserver la version retenue dans BentoML pour inference stable.
 
-## 10) Probleme frequents et corrections rapides
+## 11) Erreurs frequentes
 
-- Erreur random_forest_energy:latest introuvable:
-  - Relancer poetry run python scripts_bento/save_model.py.
+- random_forest_energy:latest introuvable:
+  - executer scripts_bento/save_model.py avant de lancer l API.
 
-- Erreur connexion refusee sur /predict:
-  - Verifier que poetry run bentoml serve scripts_bento.service:EnergyService --reload tourne dans un autre terminal.
+- connection refusee sur /predict:
+  - verifier que bentoml serve tourne bien en parallele.
 
-- Python pas en 3.11:
-  - Forcer poetry env use 3.11 puis poetry install.
-
-- Donnees manquantes:
-  - Verifier la presence de data/feature_engineered_2016_energySpec.csv.
+- erreur de version Python:
+  - reexecuter poetry env use 3.11 puis poetry install.
